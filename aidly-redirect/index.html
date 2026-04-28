@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Confirming your email...</title>
+  <script>
+    window.onload = function() {
+      // Grab the full URL including hash/query params
+      const url = window.location.href;
+      
+      // Extract the token hash from Supabase redirect
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.replace('#', '?'));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      const type = params.get('type');
+      
+      if (type === 'signup' || type === 'email_change') {
+        // Redirect to app with tokens
+        const deepLink = `aidly://auth/confirmed#${hash.substring(1)}`;
+        window.location.href = deepLink;
+        
+        // Fallback message if app doesn't open
+        setTimeout(() => {
+          document.getElementById('message').innerHTML = 
+            'Email confirmed! Open the Aidly app to sign in.';
+        }, 2000);
+      } else {
+        document.getElementById('message').innerHTML = 
+          'Email confirmed! Open the Aidly app to sign in.';
+        setTimeout(() => {
+          window.location.href = 'aidly://auth/confirmed';
+        }, 500);
+      }
+    }
+  </script>
+</head>
+<body style="font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
+  <div style="text-align: center; padding: 40px;">
+    <div style="width: 64px; height: 64px; background: #1A6BBF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+        <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z"/>
+      </svg>
+    </div>
+    <h2 style="color: #0F2942; margin-bottom: 8px;">Aidly</h2>
+    <p id="message" style="color: #5A7A96; font-size: 16px;">Confirming your email...</p>
+    <p style="color: #5A7A96; font-size: 13px; margin-top: 20px;">
+      If the app doesn't open automatically,<br>open Aidly and sign in.
+    </p>
+  </div>
+</body>
+</html>
