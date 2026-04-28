@@ -4,48 +4,59 @@
   <title>Confirming your email...</title>
   <script>
     window.onload = function() {
-      // Grab the full URL including hash/query params
-      const url = window.location.href;
-      
-      // Extract the token hash from Supabase redirect
       const hash = window.location.hash;
-      const params = new URLSearchParams(hash.replace('#', '?'));
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const type = params.get('type');
+      const search = window.location.search;
       
-      if (type === 'signup' || type === 'email_change') {
-        // Redirect to app with tokens
-        const deepLink = `aidly://auth/confirmed#${hash.substring(1)}`;
-        window.location.href = deepLink;
-        
-        // Fallback message if app doesn't open
-        setTimeout(() => {
-          document.getElementById('message').innerHTML = 
-            'Email confirmed! Open the Aidly app to sign in.';
-        }, 2000);
-      } else {
-        document.getElementById('message').innerHTML = 
-          'Email confirmed! Open the Aidly app to sign in.';
-        setTimeout(() => {
-          window.location.href = 'aidly://auth/confirmed';
-        }, 500);
+      // Build deep link with everything Supabase sent
+      let deepLink = 'aidly://auth/confirmed';
+      
+      if (hash) {
+        deepLink += hash; // passes access_token, refresh_token etc
+      } else if (search) {
+        deepLink += '?' + search.substring(1);
       }
+      
+      // Attempt to open the app
+      window.location.href = deepLink;
+      
+      // Show fallback message after 2 seconds if app didn't open
+      setTimeout(() => {
+        document.getElementById('status').innerHTML = 
+          'Email confirmed! Open the PAL Aid app and sign in.';
+        document.getElementById('spinner').style.display = 'none';
+      }, 2000);
     }
   </script>
 </head>
-<body style="font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc;">
-  <div style="text-align: center; padding: 40px;">
-    <div style="width: 64px; height: 64px; background: #1A6BBF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-        <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z"/>
+<body style="font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;">
+  <div style="text-align:center;padding:40px;max-width:400px;">
+    
+    <div style="width:72px;height:72px;background:#1A6BBF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z" fill="white"/>
+        <path d="M9 12l2 2 4-4" stroke="#1A6BBF" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </div>
-    <h2 style="color: #0F2942; margin-bottom: 8px;">Aidly</h2>
-    <p id="message" style="color: #5A7A96; font-size: 16px;">Confirming your email...</p>
-    <p style="color: #5A7A96; font-size: 13px; margin-top: 20px;">
-      If the app doesn't open automatically,<br>open Aidly and sign in.
+
+    <h2 style="color:#0F2942;margin:0 0 8px;font-size:22px;font-weight:700;">PAL Aid</h2>
+    
+    <div id="spinner" style="margin:20px auto;width:24px;height:24px;border:3px solid #E8F2FC;border-top:3px solid #1A6BBF;border-radius:50%;animation:spin 1s linear infinite;"></div>
+    
+    <p id="status" style="color:#5A7A96;font-size:15px;line-height:1.5;">
+      Confirming your email...
+    </p>
+    
+    <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">
+      If the app doesn't open automatically,<br>
+      open PAL Aid and sign in.
     </p>
   </div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </body>
 </html>
