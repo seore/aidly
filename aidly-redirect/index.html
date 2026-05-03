@@ -1,62 +1,449 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Confirming your email...</title>
-  <script>
-    window.onload = function() {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      
-      // Build deep link with everything Supabase sent
-      let deepLink = 'aidly://auth/confirmed';
-      
-      if (hash) {
-        deepLink += hash; // passes access_token, refresh_token etc
-      } else if (search) {
-        deepLink += '?' + search.substring(1);
-      }
-      
-      // Attempt to open the app
-      window.location.href = deepLink;
-      
-      // Show fallback message after 2 seconds if app didn't open
-      setTimeout(() => {
-        document.getElementById('status').innerHTML = 
-          'Email confirmed! Open the PAL Aid app and sign in.';
-        document.getElementById('spinner').style.display = 'none';
-      }, 2000);
-    }
-  </script>
-</head>
-<body style="font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;">
-  <div style="text-align:center;padding:40px;max-width:400px;">
-    
-    <div style="width:72px;height:72px;background:#1A6BBF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z" fill="white"/>
-        <path d="M9 12l2 2 4-4" stroke="#1A6BBF" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </div>
-
-    <h2 style="color:#0F2942;margin:0 0 8px;font-size:22px;font-weight:700;">PAL Aid</h2>
-    
-    <div id="spinner" style="margin:20px auto;width:24px;height:24px;border:3px solid #E8F2FC;border-top:3px solid #1A6BBF;border-radius:50%;animation:spin 1s linear infinite;"></div>
-    
-    <p id="status" style="color:#5A7A96;font-size:15px;line-height:1.5;">
-      Confirming your email...
-    </p>
-    
-    <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">
-      If the app doesn't open automatically,<br>
-      open PAL Aid and sign in.
-    </p>
-  </div>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAL Aid — Your Pocket First Aid Companion</title>
+  <meta name="description" content="PAL Aid gives you instant first aid guides, AI-powered guidance, and one-tap emergency services. Free on iPhone.">
   <style>
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f2942;
+      line-height: 1.6;
+    }
+
+    /* ── nav ── */
+    nav {
+      background: #1A6BBF;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      text-decoration: none;
+    }
+    .nav-logo {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .nav-name { font-size: 18px; font-weight: 700; }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .nav-links a:hover { color: white; }
+
+    /* ── hero ── */
+    .hero {
+      background: linear-gradient(135deg, #1A6BBF 0%, #0F2942 100%);
+      padding: 80px 24px;
+      text-align: center;
+      color: white;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero p {
+      font-size: 18px;
+      opacity: 0.85;
+      max-width: 520px;
+      margin: 0 auto 36px;
+      line-height: 1.6;
+    }
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      color: #1A6BBF;
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      transition: transform 0.15s;
+    }
+    .hero-cta:hover { transform: translateY(-2px); }
+    .hero-sub {
+      margin-top: 16px;
+      font-size: 13px;
+      opacity: 0.6;
+    }
+
+    /* ── features ── */
+    .section {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 72px 24px;
+    }
+    .section-label {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #1A6BBF;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .section h2 {
+      text-align: center;
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 800;
+      color: #0f2942;
+      margin-bottom: 12px;
+    }
+    .section-sub {
+      text-align: center;
+      font-size: 16px;
+      color: #5a7a96;
+      margin-bottom: 52px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: white;
+      border: 1px solid #dbe4ef;
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f2942;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: #5a7a96;
+      line-height: 1.6;
+    }
+    .feature-badge {
+      display: inline-block;
+      background: #D97706;
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── how it works ── */
+    .alt-bg { background: #e8f2fc; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 32px;
+      margin-top: 0;
+    }
+    .step { text-align: center; }
+    .step-num {
+      width: 48px; height: 48px;
+      background: #1A6BBF;
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 auto 16px;
+    }
+    .step h3 { font-size: 16px; font-weight: 700; color: #0f2942; margin-bottom: 8px; }
+    .step p  { font-size: 14px; color: #5a7a96; }
+
+    /* ── pricing ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .price-card {
+      background: white;
+      border: 2px solid #dbe4ef;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+    }
+    .price-card.popular {
+      border-color: #1A6BBF;
+      position: relative;
+    }
+    .popular-tag {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1A6BBF;
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .price-title { font-size: 18px; font-weight: 700; color: #0f2942; margin-bottom: 8px; }
+    .price-amount {
+      font-size: 40px;
+      font-weight: 800;
+      color: #0f2942;
+      line-height: 1;
+      margin: 12px 0 4px;
+    }
+    .price-period { font-size: 14px; color: #5a7a96; margin-bottom: 16px; }
+    .price-desc { font-size: 13px; color: #5a7a96; }
+    .price-card.popular .price-desc { color: #1A6BBF; font-weight: 600; }
+
+    /* ── cta banner ── */
+    .cta-banner {
+      background: #1A6BBF;
+      text-align: center;
+      padding: 72px 24px;
+      color: white;
+    }
+    .cta-banner h2 {
+      font-size: clamp(24px, 3vw, 40px);
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .cta-banner p {
+      font-size: 16px;
+      opacity: 0.8;
+      margin-bottom: 32px;
+    }
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      color: #1A6BBF;
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    /* ── disclaimer ── */
+    .disclaimer {
+      background: #FEE2E2;
+      border-top: 1px solid #FCA5A5;
+      padding: 16px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #991B1B;
+    }
+
+    /* ── footer ── */
+    footer {
+      background: #0f2942;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 13px;
+    }
+    footer a { color: rgba(255,255,255,0.6); text-decoration: none; margin: 0 12px; }
+    footer a:hover { color: white; }
+    .footer-links { margin-top: 12px; }
+
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .hero { padding: 60px 20px; }
     }
   </style>
+</head>
+<body>
+
+<!-- nav -->
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">🛡️</div>
+    <div class="nav-name">PAL Aid</div>
+  </a>
+  <div class="nav-links">
+    <a href="/support">Support</a>
+    <a href="/privacy">Privacy</a>
+    <a href="/terms">Terms</a>
+  </div>
+</nav>
+
+<!-- hero -->
+<div class="hero">
+  <div class="hero-badge">🛡️ Free on iPhone</div>
+  <h1>First aid that thinks with you</h1>
+  <p>Instant guides, AI-powered guidance, and one-tap emergency services — always in your pocket.</p>
+  <a href="https://apps.apple.com/app/pal-aid" class="hero-cta">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+    Download on the App Store
+  </a>
+  <div class="hero-sub">Free to download · iOS 15+ · No account required for guides</div>
+</div>
+
+<!-- features -->
+<div class="section">
+  <div class="section-label">Features</div>
+  <h2>Everything you need in an emergency</h2>
+  <p class="section-sub">Built for real situations — not just reference material.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#E8F2FC">🤖</div>
+      <h3>Ask PAL Aid <span class="feature-badge">AI</span></h3>
+      <p>Describe any situation and get instant, personalised first aid guidance. Not a list — actual step-by-step help tailored to what's happening.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#FEE2E2">🆘</div>
+      <h3>Emergency Mode</h3>
+      <p>One tap opens Emergency Mode. Auto-detects your country and shows the right emergency number — 999, 911, 112 and 50+ countries worldwide.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#EAF7EE">✚</div>
+      <h3>14+ First Aid Guides</h3>
+      <p>Clear, illustrated step-by-step guides for burns, bleeding, choking, CPR, fractures, heatstroke, seizures and more. All free, no paywall.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#E8F2FC">⊞</div>
+      <h3>ICE QR Code</h3>
+      <p>Generate a QR code from your medical profile. Paramedics scan it to instantly see your blood type, conditions, and emergency contact.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#EDE9FE">👨‍👩‍👧</div>
+      <h3>Family Profiles</h3>
+      <p>Store ICE profiles for up to 5 family members. Your partner, children, elderly parents — all covered in one app.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:#FEF3C7">⚡</div>
+      <h3>Offline Mode</h3>
+      <p>Download all guides to your device. Every guide available with zero internet — exactly when you need it most.</p>
+    </div>
+  </div>
+</div>
+
+<!-- how it works -->
+<div class="alt-bg">
+  <div class="section">
+    <div class="section-label">How it works</div>
+    <h2>Ready in seconds</h2>
+    <p class="section-sub">No training needed. Open the app and you're ready.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Download free</h3>
+        <p>Install PAL Aid from the App Store. No account required to access first aid guides.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Set up your ICE profile</h3>
+        <p>Add your blood type, medical conditions, and emergency contact. Generate your QR code.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Use it when it matters</h3>
+        <p>Open the app in any emergency. Find guides, call for help, or ask PAL Aid directly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- pricing -->
+<div class="section">
+  <div class="section-label">Premium</div>
+  <h2>Unlock everything</h2>
+  <p class="section-sub">All first aid guides are free. Premium unlocks the AI assistant and advanced features.</p>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-title">Monthly</div>
+      <div class="price-amount">£3.99</div>
+      <div class="price-period">per month</div>
+      <div class="price-desc">Cancel anytime</div>
+    </div>
+    <div class="price-card popular">
+      <div class="popular-tag">MOST POPULAR</div>
+      <div class="price-title">Yearly</div>
+      <div class="price-amount">£29.99</div>
+      <div class="price-period">per year</div>
+      <div class="price-desc">Save 37% · Best value</div>
+    </div>
+    <div class="price-card">
+      <div class="price-title">Lifetime</div>
+      <div class="price-amount">£49.99</div>
+      <div class="price-period">one time</div>
+      <div class="price-desc">Pay once, own forever</div>
+    </div>
+  </div>
+</div>
+
+<!-- cta -->
+<div class="cta-banner">
+  <h2>Know what to do. Every time.</h2>
+  <p>Download PAL Aid free on iPhone today.</p>
+  <a href="https://apps.apple.com/app/pal-aid" class="cta-btn">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+    Download on the App Store
+  </a>
+</div>
+
+<!-- disclaimer -->
+<div class="disclaimer">
+  ⚠️ PAL Aid provides general first aid information only and is not a substitute for professional medical advice. Always call emergency services in a life-threatening situation.
+</div>
+
+<!-- footer -->
+<footer>
+  <div>© 2026 PAL Aid · First Aid & Emergency Response</div>
+  <div class="footer-links">
+    <a href="/support">Support</a>
+    <a href="/privacy">Privacy Policy</a>
+    <a href="/terms">Terms of Service</a>
+    <a href="mailto:support@palaid.app">Contact</a>
+  </div>
+</footer>
+
 </body>
 </html>
