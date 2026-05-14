@@ -1,62 +1,152 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Confirming your email...</title>
-  <script>
-    window.onload = function() {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      
-      // Build deep link with everything Supabase sent
-      let deepLink = 'aidly://auth/confirmed';
-      
-      if (hash) {
-        deepLink += hash; // passes access_token, refresh_token etc
-      } else if (search) {
-        deepLink += '?' + search.substring(1);
-      }
-      
-      // Attempt to open the app
-      window.location.href = deepLink;
-      
-      // Show fallback message after 2 seconds if app didn't open
-      setTimeout(() => {
-        document.getElementById('status').innerHTML = 
-          'Email confirmed! Open the PAL Aid app and sign in.';
-        document.getElementById('spinner').style.display = 'none';
-      }, 2000);
-    }
-  </script>
-</head>
-<body style="font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;">
-  <div style="text-align:center;padding:40px;max-width:400px;">
-    
-    <div style="width:72px;height:72px;background:#1A6BBF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z" fill="white"/>
-        <path d="M9 12l2 2 4-4" stroke="#1A6BBF" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </div>
-
-    <h2 style="color:#0F2942;margin:0 0 8px;font-size:22px;font-weight:700;">PAL Aid</h2>
-    
-    <div id="spinner" style="margin:20px auto;width:24px;height:24px;border:3px solid #E8F2FC;border-top:3px solid #1A6BBF;border-radius:50%;animation:spin 1s linear infinite;"></div>
-    
-    <p id="status" style="color:#5A7A96;font-size:15px;line-height:1.5;">
-      Confirming your email...
-    </p>
-    
-    <p style="color:#9CA3AF;font-size:12px;margin-top:24px;">
-      If the app doesn't open automatically,<br>
-      open PAL Aid and sign in.
-    </p>
-  </div>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirming your email — PAL Aid</title>
   <style>
     @keyframes spin {
-      0% { transform: rotate(0deg); }
+      0%   { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      text-align: center;
+      padding: 48px 32px;
+      max-width: 380px;
+      width: 100%;
+    }
+    .icon {
+      width: 72px; height: 72px;
+      background: #1A6BBF;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    h2 { color: #0F2942; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    #status { color: #5A7A96; font-size: 15px; line-height: 1.5; margin-bottom: 8px; }
+    #sub    { color: #9CA3AF; font-size: 12px; margin-top: 24px; line-height: 1.5; }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid #E8F2FC;
+      border-top: 3px solid #1A6BBF;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      background: #1A6BBF;
+      color: white;
+      text-decoration: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+    }
   </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L4 6v6c0 5 3.5 9.3 8 10.3C16.5 21.3 20 17 20 12V6L12 2z" fill="white"/>
+      <path d="M9 12l2 2 4-4" stroke="#1A6BBF" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <h2>PAL Aid</h2>
+  <div id="spinner" class="spinner"></div>
+  <p id="status">Confirming your email...</p>
+  <p id="sub">If the app doesn't open automatically,<br>open PAL Aid and sign in.</p>
+</div>
+
+<script>
+  window.onload = async function () {
+    const status  = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
+    const sub     = document.getElementById('sub');
+
+    // Parse both hash and query params
+    const hash   = window.location.hash.substring(1);
+    const search = window.location.search.substring(1);
+    const params = new URLSearchParams(hash || search);
+
+    const tokenHash   = params.get('token_hash');
+    const accessToken = params.get('access_token');
+    const refreshToken= params.get('refresh_token');
+    const type        = params.get('type') || 'email';
+    const errorDesc   = params.get('error_description');
+
+    // Handle error from Supabase
+    if (errorDesc) {
+      spinner.style.display = 'none';
+      status.textContent = decodeURIComponent(errorDesc.replace(/\+/g, ' '));
+      return;
+    }
+
+    // Case 1: token_hash present — new Supabase PKCE format
+    // Need to exchange with Supabase verify endpoint
+    if (tokenHash) {
+      try {
+        const SUPABASE_URL     = 'https://bdlfshlnfcpvkqecszni.supabase.co';
+        const SUPABASE_ANON_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbGZzaGxuZmNwdmtxZWNzem5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0MTUyNjksImV4cCI6MjA1Nzk5MTI2OX0.pPJ5KkHTCqAqO2GpfRO1l2FkqBnf-bGBVA8nPIPajJ4';
+
+        const res = await fetch(SUPABASE_URL + '/auth/v1/verify', {
+          method : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey'      : SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ token_hash: tokenHash, type }),
+        });
+
+        const data = await res.json();
+
+        if (data.access_token) {
+          status.textContent = 'Email confirmed! Opening PAL Aid...';
+          setTimeout(() => {
+            window.location.href =
+              'aidly://auth/confirmed#access_token=' +
+              data.access_token +
+              '&refresh_token=' + (data.refresh_token || '');
+          }, 800);
+          return;
+        } else {
+          throw new Error(data.error_description || 'Verification failed');
+        }
+      } catch (e) {
+        spinner.style.display = 'none';
+        status.textContent = 'Confirmation failed. Please try again or contact support@palaid.app';
+        console.error(e);
+        return;
+      }
+    }
+
+    // Case 2: access_token already in URL — old Supabase implicit format
+    if (accessToken) {
+      status.textContent = 'Email confirmed! Opening PAL Aid...';
+      setTimeout(() => {
+        window.location.href =
+          'aidly://auth/confirmed#access_token=' +
+          accessToken +
+          '&refresh_token=' + (refreshToken || '');
+      }, 800);
+      return;
+    }
+
+    // No token found
+    spinner.style.display = 'none';
+    status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
+  };
+</script>
 </body>
 </html>
