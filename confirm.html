@@ -59,28 +59,59 @@
 </div>
 
 <script>
-  window.onload = function () {
+  const SUPABASE_URL      = 'https://iiehqgdofdrvipgskqkp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpw==ZWhxZ2RvZmRydmlwZ3NrcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDIwMDMsImV4cCI6MjA4MzkxODAwM30.ajfQuyx9MZp_LBmPhtWgT3Lx9HdRBf8RFcmksq3Vbok';
+
+  window.onload = async function () {
     const status  = document.getElementById('status');
     const spinner = document.getElementById('spinner');
 
-    // Supabase redirects here with tokens in the URL fragment
-    // Format: palaid.app/confirm#access_token=xxx&refresh_token=xxx
     const hash   = window.location.hash.substring(1);
     const search = window.location.search.substring(1);
     const params = new URLSearchParams(hash || search);
 
+    const tokenHash    = params.get('token_hash');
     const accessToken  = params.get('access_token');
     const refreshToken = params.get('refresh_token');
     const errorDesc    = params.get('error_description');
 
-    // Handle error
     if (errorDesc) {
       spinner.style.display = 'none';
-      status.textContent = decodeURIComponent(errorDesc.replace(/\+/g, ' '));
+      status.textContent = 'This link has expired. Please register again.';
       return;
     }
 
-    // Supabase already verified the token — just open the app
+    if (tokenHash) {
+      try {
+        const res = await fetch(SUPABASE_URL + '/auth/v1/verify', {
+          method : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey'      : SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ token_hash: tokenHash, type: 'signup' }),
+        });
+
+        const data = await res.json();
+
+        if (data.access_token) {
+          status.textContent = 'Email confirmed! Opening PAL Aid...';
+          setTimeout(() => {
+            window.location.href =
+              'aidly://auth/confirmed#access_token=' + data.access_token +
+              '&refresh_token=' + (data.refresh_token || '');
+          }, 800);
+        } else {
+          spinner.style.display = 'none';
+          status.textContent = 'This link has expired. Please register again.';
+        }
+      } catch (e) {
+        spinner.style.display = 'none';
+        status.textContent = 'Something went wrong. Please try again.';
+      }
+      return;
+    }
+
     if (accessToken) {
       status.textContent = 'Email confirmed! Opening PAL Aid...';
       setTimeout(() => {
@@ -91,7 +122,6 @@
       return;
     }
 
-    // No token — email confirmed but app didn't open
     spinner.style.display = 'none';
     status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
   };
