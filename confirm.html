@@ -59,72 +59,37 @@
 </div>
 
 <script>
-  const SUPABASE_URL      = 'https://iiehqgdofdrvipgskqkp.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpw==ZWhxZ2RvZmRydmlwZ3NrcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDIwMDMsImV4cCI6MjA4MzkxODAwM30.ajfQuyx9MZp_LBmPhtWgT3Lx9HdRBf8RFcmksq3Vbok';
+ window.onload = function () {
+  const status  = document.getElementById('status');
+  const spinner = document.getElementById('spinner');
 
-  window.onload = async function () {
-    const status  = document.getElementById('status');
-    const spinner = document.getElementById('spinner');
+  const hash   = window.location.hash.substring(1);
+  const search = window.location.search.substring(1);
+  const params = new URLSearchParams(hash || search);
 
-    const hash   = window.location.hash.substring(1);
-    const search = window.location.search.substring(1);
-    const params = new URLSearchParams(hash || search);
+  const accessToken  = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  const errorDesc    = params.get('error_description');
 
-    const tokenHash    = params.get('token_hash');
-    const accessToken  = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    const errorDesc    = params.get('error_description');
-
-    if (errorDesc) {
-      spinner.style.display = 'none';
-      status.textContent = 'This link has expired. Please register again.';
-      return;
-    }
-
-    if (tokenHash) {
-      try {
-        const res = await fetch(SUPABASE_URL + '/auth/v1/verify', {
-          method : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey'      : SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ token_hash: tokenHash, type: 'signup' }),
-        });
-
-        const data = await res.json();
-
-        if (data.access_token) {
-          status.textContent = 'Email confirmed! Opening PAL Aid...';
-          setTimeout(() => {
-            window.location.href =
-              'aidly://auth/confirmed#access_token=' + data.access_token +
-              '&refresh_token=' + (data.refresh_token || '');
-          }, 800);
-        } else {
-          spinner.style.display = 'none';
-          status.textContent = 'This link has expired. Please register again.';
-        }
-      } catch (e) {
-        spinner.style.display = 'none';
-        status.textContent = 'Something went wrong. Please try again.';
-      }
-      return;
-    }
-
-    if (accessToken) {
-      status.textContent = 'Email confirmed! Opening PAL Aid...';
-      setTimeout(() => {
-        window.location.href =
-          'aidly://auth/confirmed#access_token=' + accessToken +
-          '&refresh_token=' + (refreshToken || '');
-      }, 800);
-      return;
-    }
-
+  if (errorDesc) {
     spinner.style.display = 'none';
-    status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
-  };
+    status.textContent = 'This link has expired. Please register again.';
+    return;
+  }
+
+  if (accessToken) {
+    status.textContent = 'Email confirmed! Opening PAL Aid...';
+    setTimeout(() => {
+      window.location.href =
+        'aidly://auth/confirmed#access_token=' + accessToken +
+        '&refresh_token=' + (refreshToken || '');
+    }, 800);
+    return;
+  }
+
+  spinner.style.display = 'none';
+  status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
+};
 </script>
 </body>
 </html>
