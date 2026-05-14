@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta http-equiv="x-dns-prefetch-control" content="off">
   <title>Confirming your email — PAL Aid</title>
   <style>
     @keyframes spin {
@@ -35,7 +33,7 @@
     }
     h2 { color: #0F2942; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
     #status { color: #5A7A96; font-size: 15px; line-height: 1.5; margin: 12px 0; }
-    #sub    { color: #9CA3AF; font-size: 12px; margin-top: 24px; line-height: 1.5; }
+    #sub { color: #9CA3AF; font-size: 12px; margin-top: 24px; line-height: 1.5; }
     .spinner {
       width: 24px; height: 24px;
       border: 3px solid #E8F2FC;
@@ -61,37 +59,87 @@
 </div>
 
 <script>
- window.onload = function () {
-  const status  = document.getElementById('status');
-  const spinner = document.getElementById('spinner');
+  const SUPABASE_URL      = 'https://iiehqgdofdrvipgskqkp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlpw==ZWhxZ2RvZmRydmlwZ3NrcWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNDIwMDMsImV4cCI6MjA4MzkxODAwM30.ajfQuyx9MZp_LBmPhtWgT3Lx9HdRBf8RFcmksq3Vbok';
 
-  const hash   = window.location.hash.substring(1);
-  const search = window.location.search.substring(1);
-  const params = new URLSearchParams(hash || search);
+  window.onload = async function () {
+    const status  = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
 
-  const accessToken  = params.get('access_token');
-  const refreshToken = params.get('refresh_token');
-  const errorDesc    = params.get('error_description');
+    // Parse query string first, then hash
+    const search = window.location.search.substring(1);
+    const hash   = window.location.hash.substring(1);
+    const params = new URLSearchParams(search || hash);
 
-  if (errorDesc) {
+    const tokenHash    = params.get('token_hash');
+    const accessToken  = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const type         = params.get('type') || 'signup';
+    const errorDesc    = params.get('error_description');
+
+    // Error from Supabase
+    if (errorDesc) {
+      spinner.style.display = 'none';
+      status.textContent = 'This link has expired. Please register again.';
+      return;
+    }
+
+    // PKCE token_hash — call Supabase verify via POST
+    // Gmail cannot pre-consume this since it requires a POST request
+    if (tokenHash) {
+      try {
+        const res = await fetch(SUPABASE_URL + '/auth/v1/verify', {
+          method : 'POST',
+          headers: {
+            'Content-Type' : 'application/json',
+            'apikey'       : SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            token_hash: tokenHash,
+            type      : type,
+          }),
+        });
+
+        const text = await res.text();
+        let data = {};
+        try { data = JSON.parse(text); } catch (e) {}
+
+        if (data.access_token) {
+          status.textContent = 'Email confirmed! Opening PAL Aid...';
+          setTimeout(() => {
+            window.location.href =
+              'aidly://auth/confirmed#access_token=' + data.access_token +
+              '&refresh_token=' + (data.refresh_token || '');
+          }, 800);
+        } else {
+          // Verified but no token returned — still confirmed
+          spinner.style.display = 'none';
+          status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
+        }
+      } catch (e) {
+        spinner.style.display = 'none';
+        status.textContent = 'Something went wrong. Open the PAL Aid app and sign in.';
+        console.error(e);
+      }
+      return;
+    }
+
+    // access_token already present — Supabase already verified
+    if (accessToken) {
+      status.textContent = 'Email confirmed! Opening PAL Aid...';
+      setTimeout(() => {
+        window.location.href =
+          'aidly://auth/confirmed#access_token=' + accessToken +
+          '&refresh_token=' + (refreshToken || '');
+      }, 800);
+      return;
+    }
+
+    // No token found
     spinner.style.display = 'none';
-    status.textContent = 'This link has expired. Please register again.';
-    return;
-  }
-
-  if (accessToken) {
-    status.textContent = 'Email confirmed! Opening PAL Aid...';
-    setTimeout(() => {
-      window.location.href =
-        'aidly://auth/confirmed#access_token=' + accessToken +
-        '&refresh_token=' + (refreshToken || '');
-    }, 800);
-    return;
-  }
-
-  spinner.style.display = 'none';
-  status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
-};
+    status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
+  };
 </script>
 </body>
 </html>
