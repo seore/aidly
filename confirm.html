@@ -32,7 +32,7 @@
       margin: 0 auto 20px;
     }
     h2 { color: #0F2942; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    #status { color: #5A7A96; font-size: 15px; line-height: 1.5; margin-bottom: 8px; }
+    #status { color: #5A7A96; font-size: 15px; line-height: 1.5; margin: 12px 0; }
     #sub    { color: #9CA3AF; font-size: 12px; margin-top: 24px; line-height: 1.5; }
     .spinner {
       width: 24px; height: 24px;
@@ -41,17 +41,6 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 20px auto;
-    }
-    .btn {
-      display: inline-block;
-      margin-top: 20px;
-      background: #1A6BBF;
-      color: white;
-      text-decoration: none;
-      padding: 12px 28px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
     }
   </style>
 </head>
@@ -70,80 +59,39 @@
 </div>
 
 <script>
-  window.onload = async function () {
+  window.onload = function () {
     const status  = document.getElementById('status');
     const spinner = document.getElementById('spinner');
-    const sub     = document.getElementById('sub');
 
-    // Parse both hash and query params
+    // Supabase redirects here with tokens in the URL fragment
+    // Format: palaid.app/confirm#access_token=xxx&refresh_token=xxx
     const hash   = window.location.hash.substring(1);
     const search = window.location.search.substring(1);
     const params = new URLSearchParams(hash || search);
 
-    const tokenHash   = params.get('token_hash');
-    const accessToken = params.get('access_token');
-    const refreshToken= params.get('refresh_token');
-    const type        = params.get('type') || 'email';
-    const errorDesc   = params.get('error_description');
+    const accessToken  = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const errorDesc    = params.get('error_description');
 
-    // Handle error from Supabase
+    // Handle error
     if (errorDesc) {
       spinner.style.display = 'none';
       status.textContent = decodeURIComponent(errorDesc.replace(/\+/g, ' '));
       return;
     }
 
-    // Case 1: token_hash present — new Supabase PKCE format
-    // Need to exchange with Supabase verify endpoint
-    if (tokenHash) {
-      try {
-        const SUPABASE_URL     = 'https://bdlfshlnfcpvkqecszni.supabase.co';
-        const SUPABASE_ANON_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbGZzaGxuZmNwdmtxZWNzem5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0MTUyNjksImV4cCI6MjA1Nzk5MTI2OX0.pPJ5KkHTCqAqO2GpfRO1l2FkqBnf-bGBVA8nPIPajJ4';
-
-        const res = await fetch(SUPABASE_URL + '/auth/v1/verify', {
-          method : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey'      : SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ token_hash: tokenHash, type }),
-        });
-
-        const data = await res.json();
-
-        if (data.access_token) {
-          status.textContent = 'Email confirmed! Opening PAL Aid...';
-          setTimeout(() => {
-            window.location.href =
-              'aidly://auth/confirmed#access_token=' +
-              data.access_token +
-              '&refresh_token=' + (data.refresh_token || '');
-          }, 800);
-          return;
-        } else {
-          throw new Error(data.error_description || 'Verification failed');
-        }
-      } catch (e) {
-        spinner.style.display = 'none';
-        status.textContent = 'Confirmation failed. Please try again or contact support@palaid.app';
-        console.error(e);
-        return;
-      }
-    }
-
-    // Case 2: access_token already in URL — old Supabase implicit format
+    // Supabase already verified the token — just open the app
     if (accessToken) {
       status.textContent = 'Email confirmed! Opening PAL Aid...';
       setTimeout(() => {
         window.location.href =
-          'aidly://auth/confirmed#access_token=' +
-          accessToken +
+          'aidly://auth/confirmed#access_token=' + accessToken +
           '&refresh_token=' + (refreshToken || '');
       }, 800);
       return;
     }
 
-    // No token found
+    // No token — email confirmed but app didn't open
     spinner.style.display = 'none';
     status.textContent = 'Email confirmed! Open the PAL Aid app and sign in.';
   };
